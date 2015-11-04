@@ -122,6 +122,65 @@ describe('RBAC sync', function() {
                 done(new Error('Should not reject'));
             });
         });
+        describe('with callback', function () {
+            it('should respect allowed operations', function (done) {
+                rbac.can('user', 'post:add', function (err, can) {
+                    if(err || !can) {
+                        done(new Error ('Should not error'));
+                        return;
+                    }
+                    done();
+                });
+            });
+            it('should reject undefined operations', function (done) {
+                rbac.can('user', 'post:what', function (err, can) {
+                    if(err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
+            });
+            it('should reject undefined users', function (done) {
+                rbac.can('what', 'post:add', function (err, can) {
+                    if(err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
+            });
+
+            it('should reject function operations with no operands', function (done) {
+                rbac.can('user', 'post:save', function (err, can) {
+                    if(err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
+            });
+
+            it('should reject function operations with rejectable values', function (done) {
+                rbac.can('user', 'post:save', {ownerId: 1, postId: 2}, function (err, can) {
+                    if(err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
+            });
+
+            it('should allow function operations with correct values', function (done) {
+                rbac.can('user', 'post:save', {ownerId: 1, postId: 1}, function (err, can) {
+                    if(err || !can) {
+                        done(new Error('Should not reject'));
+                        return;
+                    }
+                    done();
+                });
+            });
+        });
     });
 
     describe('parent role operations', function () {
@@ -139,18 +198,60 @@ describe('RBAC sync', function() {
                 done();
             });
         });
+        describe('with callback', function () {
+            it('should respect allowed operations', function (done) {
+                rbac.can('manager', 'account:add', function (err, can) {
+                    if(err || !can) {
+                        done(new Error('Should not reject'));
+                        return;
+                    }
+                    done();
+                });
+            });
+            it('should reject undefined operations', function (done) {
+                rbac.can('manager', 'post:what', function (err, can) {
+                    if(err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
+            });
+        });
     });
     describe('parents parent role operations', function () {
         it('should respect allowed operations', function (done) {
             rbac.can('admin', 'account:add').then(function () {
                 done();
-            }, done);
+            }, function (err) {
+                done(new Error('Should not reject'));
+            });
         });
         it('should reject undefined operations', function (done) {
             rbac.can('admin', 'post:what').then(function () {
                 done(new Error('Should not be allowed'));
             }, function () {
                 done();
+            });
+        });
+        describe('with callback', function () {
+            it('should respect allowed operations', function (done) {
+                rbac.can('admin', 'account:add', function (err, can) {
+                    if(err || !can) {
+                        done(new Error('Should not reject'));
+                        return;
+                    }
+                    done();
+                });
+            });
+            it('should reject undefined operations', function (done) {
+                rbac.can('admin', 'post:what', function (err, can) {
+                    if (err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
             });
         });
     });

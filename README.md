@@ -69,9 +69,9 @@ If the element is an object:
 The `options` property is optional and meant for ease of use and logical grouping of operations concerning objects. If defined
 then it must be an object. The keys are counted as names of objects and they can be referenced in the `can` operations array.
 
-## Usage can(role, operation, params?)
+## Usage can(role, operation, params?, cb? (err, can))
 
-After initialization you can use the `.can` function of the object to check if role should have access to an operation.
+After initialization you can use the `can` function of the object to check if role should have access to an operation.
 
 The function will return a Promise that will resolve if the role can access the operation or reject if something goes wrong
 or the user is not allowed to access.
@@ -106,6 +106,30 @@ hierarchy.
           // something else went wrong - refer to err object
         }
       });
+      
+The function can also be called with a callback as a third or fourth parameter accordingly. It will result in (err, result) -> 
+if error occurs, then there is err, if result is negative then operation is not allowed.
+
+The previous examples are equivalent to:
+
+    rbac.can('user', 'post:add', function (err, can) {
+      if(err || !can) {
+        // we are not allowed
+      }
+      else {
+        // we are allowed
+      }
+    });
+
+    rbac.can('user', 'post:save', {userId: 1, ownerId: 2}, function (err, can) {
+      if(err || !can) {
+        // we are not allowed
+      }
+      else {
+        // we are allowed
+      }
+    });
+
 
 If the options of the initialization is a function then it will wait for the initialization to resolve before resolving
 any checks.
