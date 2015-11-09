@@ -39,9 +39,16 @@ describe('RBAC async', function() {
             });
     });
 
-    it('should reject if function returns object with no .roles', function (done) {
+
+
+    it('should throw error if roles[$i].inherits is not an array', function (done) {
         (new RBAC(function (cb) {
-            setImmediate(cb, null, {});
+            setImmediate(cb, null, {
+                hello: {
+                    can: ['hel'],
+                    inherits: 1
+                }
+            });
         }))._init
             .then(function () {
                 done(new Error('Should not succeed'));
@@ -51,9 +58,14 @@ describe('RBAC async', function() {
             });
     });
 
-    it('should reject if function returns object with no .roles object', function (done) {
+    it('should throw error if roles[$i].inherits[$i2] is not a string', function () {
         (new RBAC(function (cb) {
-            setImmediate(cb, null, {roles: 1});
+            setImmediate(cb, null, {
+                hello: {
+                    can: ['hel'],
+                    inherits: [1]
+                }
+            });
         }))._init
             .then(function () {
                 done(new Error('Should not succeed'));
@@ -62,9 +74,15 @@ describe('RBAC async', function() {
                 done();
             });
     });
-    it('should reject if function returns object with non object .objects', function (done) {
+
+    it('should throw error if roles[$i].inherits[$i2] is not a defined role', function () {
         (new RBAC(function (cb) {
-            setImmediate(cb, null, {roles: {}, objects: 1});
+            setImmediate(cb, null, {
+                hello: {
+                    can: ['hel'],
+                    inherits: ['what']
+                }
+            });
         }))._init
             .then(function () {
                 done(new Error('Should not succeed'));
@@ -73,6 +91,7 @@ describe('RBAC async', function() {
                 done();
             });
     });
+
     it('should resolve if function returns correct object', function (done) {
         (new RBAC(function (cb) {
             setImmediate(cb, null, data.all);

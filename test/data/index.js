@@ -2,7 +2,7 @@
 
 var roles = {
     user: {
-        can: ['account', 'post:add', {
+        can: ['account:add', 'account:save', 'account:delete', 'post:add', {
             name: 'post:save',
             when: function (params, callback) {
                 setImmediate(callback, null, params.ownerId === params.postId);
@@ -10,22 +10,13 @@ var roles = {
         ]
     },
     manager: {
-        can: ['user', 'post']
+        can: ['post:save', 'post:delete'],
+        inherits: ['user']
     },
     admin: {
-        can: ['manager']
+        can: ['rule the world'],
+        inherits: ['manager']
     }
 };
 
-var objects = {
-    account: ['add','save','delete'],
-    post: ['add','save','delete']
-};
-
-module.exports.all = {
-    roles: roles,
-    objects: objects
-};
-
-module.exports.roles = roles;
-module.exports.objects = objects;
+module.exports.all = roles;

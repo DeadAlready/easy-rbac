@@ -26,27 +26,23 @@ Or use create function
 Options for RBAC can be either an object or a function (cb)-> (err, object)
 
 The expected configuration object example:
-
+    
     {
-      roles: { // Required
-        user: { // Role name
-          can: ['account', 'post:add', { // list of allowed operations, objects or parents
-            name: 'post:save',
-            when: function (params, callback) {
-              setImmediate(callback, null, params.userId === params.ownerId);
-            }}
-          ]
-        },
-        manager: {
-          can: ['user', 'post']
-        },
-        admin: {
-          can: ['manager']
-        }
+      user: { // Role name
+        can: ['account', 'post:add', { // list of allowed operations
+          name: 'post:save',
+          when: function (params, callback) {
+            setImmediate(callback, null, params.userId === params.ownerId);
+          }}
+        ]
       },
-      objects: { // Optional
-        account: ['add','save','delete'],
-        post: ['add','save','delete']
+      manager: {
+        can: ['post:save', 'post:delete'],
+        inherits: ['user']
+      },
+      admin: {
+        can: ['rule the server'],
+        inherits: ['manager']
       }
     }
 
@@ -54,20 +50,13 @@ The `roles` property is required and must be an object. The keys of this object 
 
 Each role must have a `can` property, which is an array. Elements in the array can be strings or objects. 
 
-If the element is a string:
-
-* then it can refer to another role, an object or be the name of the operation. 
-* If the string refers to another role then operations from that role will be inherited. 
-* If the string refers to an object then all operations from the object will be inherited in the format `objectName:operationName`
+If the element is a string then it is expected to be the name of the permitted operation. 
 
 If the element is an object:
 
 * It must have the `name` and `when` properties
   * `name` property must be a string
   * `when` property must be a function
-
-The `options` property is optional and meant for ease of use and logical grouping of operations concerning objects. If defined
-then it must be an object. The keys are counted as names of objects and they can be referenced in the `can` operations array.
 
 ## Usage can(role, operation, params?, cb? (err, can))
 

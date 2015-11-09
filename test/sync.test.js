@@ -7,7 +7,7 @@ var assert = require('assert');
 
 describe('RBAC sync', function() {
     var rbac;
-    it('should throw error if no opts object', function () {
+    it('should throw error if no roles object', function () {
         assert.throws(
             function () {
                 rbac = new RBAC();
@@ -15,59 +15,84 @@ describe('RBAC sync', function() {
             TypeError
         );
     });
-    it('should throw error if no opts.roles object', function () {
+    it('should throw error if no roles object', function () {
         assert.throws(
             function () {
-                rbac = new RBAC({});
+                rbac = new RBAC('hello');
             },
             TypeError
         );
     });
-    it('should throw error if opts.objects is not an object', function () {
+    it('should throw error if roles[$i].can is not an array', function () {
         assert.throws(
             function () {
                 rbac = new RBAC({
-                    roles: {},
-                    objects: 1
-                });
-            },
-            TypeError
-        );
-    });
-    it('should throw error if opts.roles[$i].can is not an array', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    roles: {
-                        hello: {
-                            can: 1
-                        }
+                    hello: {
+                        can: 1
                     }
                 });
             },
             TypeError
         );
     });
-    it('should throw error if opts.roles[$i].can is not an array', function () {
+    it('should throw error if roles[$i].can is not an array', function () {
         assert.throws(
             function () {
                 rbac = new RBAC({
-                    roles: {
-                        hello: 1
+                    hello: 1
+                });
+            },
+            TypeError
+        );
+    });
+    it('should throw error if roles[$i].can[$i2] is not a string or object with .when', function () {
+        assert.throws(
+            function () {
+                rbac = new RBAC({
+                    hello: {
+                        can: [function (){}]
                     }
                 });
             },
             TypeError
         );
     });
-    it('should throw error if opts.roles[$i].can[$i2] is not a string or object with .when', function () {
+
+    it('should throw error if roles[$i].inherits is not an array', function () {
         assert.throws(
             function () {
                 rbac = new RBAC({
-                    roles: {
-                        hello: {
-                            can: [function (){}]
-                        }
+                    hello: {
+                        can: ['hel'],
+                        inherits: 1
+                    }
+                });
+            },
+            TypeError
+        );
+    });
+
+    it('should throw error if roles[$i].inherits[$i2] is not a string', function () {
+        assert.throws(
+            function () {
+                rbac = new RBAC({
+                    hello: {
+                        can: ['hel'],
+                        inherits: [1]
+                    }
+                });
+            },
+            TypeError
+        );
+    });
+
+    it('should throw error if roles[$i].inherits[$i2] is not a defined role', function () {
+        assert.throws(
+            function () {
+                rbac = new RBAC({
+                    hello: {
+                        can: ['hel'],
+                        inherits: ['what']
                     }
                 });
             },
