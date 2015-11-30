@@ -280,4 +280,38 @@ describe('RBAC sync', function() {
             });
         });
     });
+
+    describe('complex setup', function () {
+        var rbac = new RBAC({
+            signup: {
+                can: [],
+                inherits: []
+            },
+            investor: {
+                can: [
+                    'deal:read'
+                ],
+                inherits: ['signup']
+            },
+            manager: {
+                can: [
+                    'deal:readAdmin'
+                ],
+                inherits: ['investor']
+            },
+            admin: {
+                can: [],
+                inherits: ['manager']
+            }
+        });
+
+        it('should throw on deal:readAdmin', function (done) {
+            rbac.can('investor', 'deal:readAdmin')
+                .then(function () {
+                    done(new Error('Should not be allowed'));
+                }, function () {
+                    done();
+                });
+        })
+    })
 });
