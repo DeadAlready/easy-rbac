@@ -1,6 +1,6 @@
 # easy-rbac
 
-Promise based RBAC (Role Based Access Control) implementation for Node.js
+Promise based HRBAC (Hierarchical Role Based Access Control) implementation for Node.js
 
 ## Installation
 
