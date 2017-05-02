@@ -6,7 +6,13 @@ var roles = {
             name: 'post:save',
             when: function (params, callback) {
                 setImmediate(callback, null, params.ownerId === params.postId);
-            }}
+            }},
+            {
+                name: 'post:create',
+                when: function (params, callback) {
+                    setImmediate(callback, null, params.ownerId === params.userId);
+                }
+            }
         ]
     },
     manager: {

@@ -71,7 +71,7 @@ or the user is not allowed to access.
       })
       .catch(function (err) {
         // we are not allowed to access
-        if (err === false) {
+        if (err.message === 'unauthorized') {
           // operation is not defined, thus not allowed
         } 
         else {
@@ -88,7 +88,7 @@ hierarchy.
       })
       .catch(function (err) {
         // we are not allowed to access
-        if (err === false) {
+        if (err.message === 'unauthorized') {
           // operation is not defined, thus not allowed
         } 
         else {
@@ -133,7 +133,7 @@ any checks.
       })
       .catch(function (err) {
         // we are not allowed to access
-        if (err === false) {
+        if (err.message === 'unauthorized') {
           // operation is not defined, thus not allowed
         } 
         else {

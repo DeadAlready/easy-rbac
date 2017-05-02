@@ -323,4 +323,49 @@ describe('RBAC async', function() {
             });
         });
     });
+
+    describe('parent role operations with callback', function () {
+        it('should respect allowed operations', function (done) {
+            (new RBAC(function (cb) {
+                setTimeout(cb, 100, null, data.all);
+            })).can('manager', 'post:create', {userId: 1, ownerId: 1}).then(function () {
+                done();
+            }, function () {
+                done(new Error('Should not reject'));
+            });
+        });
+        it('should reject not allowed operation', function (done) {
+            (new RBAC(function (cb) {
+                setTimeout(cb, 100, null, data.all);
+            })).can('manager', 'post:create', {userId: 1, ownerId: 2}).then(function () {
+                done(new Error('Should not be allowed'));
+            }, function () {
+                done();
+            });
+        });
+        describe('with callback', function () {
+            it('should respect allowed operations', function (done) {
+                (new RBAC(function (cb) {
+                    setTimeout(cb, 100, null, data.all);
+                })).can('manager', 'post:create', {userId: 1, ownerId: 1}, function (err, can) {
+                    if(err || !can) {
+                        done(new Error('Should not reject'));
+                        return;
+                    }
+                    done();
+                });
+            });
+            it('should reject not allowed operation', function (done) {
+                (new RBAC(function (cb) {
+                    setTimeout(cb, 100, null, data.all);
+                })).can('manager', 'post:create', {userId: 1, ownerId: 2}, function (err, can) {
+                    if (err || !can) {
+                        done();
+                        return;
+                    }
+                    done(new Error('Should not be allowed'));
+                });
+            });
+        });
+    });
 });
