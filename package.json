@@ -1,6 +1,6 @@
 {
   "name": "easy-rbac",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "RBAC implementation for Node.js",
   "main": "lib/rbac.js",
   "scripts": {

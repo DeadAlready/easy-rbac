@@ -250,8 +250,12 @@ describe('RBAC async', function() {
                 setTimeout(cb, 100, null, data.all);
             })).can('manager', 'post:what').then(function () {
                 done(new Error('Should not be allowed'));
-            }, function () {
-                done();
+            }, function (err) {
+                if(err.message === 'unauthorized') {
+                    done();
+                    return;
+                }
+                done(new Error('expected err.message to equal unauthorized'));
             });
         });
         describe('with callback', function () {
