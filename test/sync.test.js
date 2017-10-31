@@ -1,317 +1,227 @@
 'use strict';
 
-var RBAC = require('../lib/rbac');
-var data = require('./data');
+const RBAC = require('../lib/rbac');
+let data = require('./data');
 
-var assert = require('assert');
+const assert = require('assert');
 
-describe('RBAC sync', function() {
-    var rbac;
-    it('should throw error if no roles object', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC();
-            },
-            TypeError
-        );
-    });
-    it('should throw error if no roles object', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC('hello');
-            },
-            TypeError
-        );
-    });
-    it('should throw error if roles[$i].can is not an array', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    hello: {
-                        can: 1
-                    }
-                });
-            },
-            TypeError
-        );
-    });
-    it('should throw error if roles[$i].can is not an array', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    hello: 1
-                });
-            },
-            TypeError
-        );
-    });
-    it('should throw error if roles[$i].can[$i2] is not a string or object with .when', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    hello: {
-                        can: [function (){}]
-                    }
-                });
-            },
-            TypeError
-        );
-    });
+const {shouldBeAllowed, shouldNotBeAllowed} = require('./utils');
 
-    it('should throw error if roles[$i].inherits is not an array', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    hello: {
-                        can: ['hel'],
-                        inherits: 1
-                    }
-                });
-            },
-            TypeError
-        );
-    });
-
-    it('should throw error if roles[$i].inherits[$i2] is not a string', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    hello: {
-                        can: ['hel'],
-                        inherits: [1]
-                    }
-                });
-            },
-            TypeError
-        );
-    });
-
-    it('should throw error if roles[$i].inherits[$i2] is not a defined role', function () {
-        assert.throws(
-            function () {
-                rbac = new RBAC({
-                    hello: {
-                        can: ['hel'],
-                        inherits: ['what']
-                    }
-                });
-            },
-            TypeError
-        );
-    });
-
-    it('should create model if all OK', function () {
-        rbac = new RBAC(data.all);
-    });
-    describe('current role operations', function () {
-        it('should respect allowed operations', function (done) {
-            rbac.can('user', 'post:add').then(function () {
-                done();
-            }, done);
+describe('RBAC sync', () => {
+  let rbac;
+  it('should reject if no roles object', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC();
+      },
+      TypeError
+    );
+  });
+  it('should throw error if no roles object', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC('hello');
+      },
+      TypeError
+    );
+  });
+  it('should throw error if roles[$i].can is not an array', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC({
+          hello: {
+            can: 1
+          }
         });
-        it('should reject undefined operations', function (done) {
-            rbac.can('user', 'post:what').then(function () {
-                done(new Error('Should not be allowed'));
-            }, function () {
-                done();
-            });
+      },
+      TypeError
+    );
+  });
+  it('should throw error if roles[$i].can is not an array', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC({
+          hello: 1
         });
-        it('should reject undefined users', function (done) {
-            rbac.can('what', 'post:add').then(function () {
-                done(new Error('Should not be allowed'));
-            }, function () {
-                done();
-            });
+      },
+      TypeError
+    );
+  });
+  it('should throw error if roles[$i].can[$i2] is not a string or object with .when', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC({
+          hello: {
+            can: [function (){}]
+          }
         });
+      },
+      TypeError
+    );
+  });
 
-        it('should reject function operations with no operands', function (done) {
-            rbac.can('user', 'post:save').then(function () {
-                done(new Error('Should not be allowed'));
-            }, function () {
-                done();
-            });
+  it('should throw error if roles[$i].inherits is not an array', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC({
+          hello: {
+            can: ['hel'],
+            inherits: 1
+          }
         });
+      },
+      TypeError
+    );
+  });
 
-        it('should reject function operations with rejectable values', function (done) {
-            rbac.can('user', 'post:save', {ownerId: 1, postId: 2}).then(function () {
-                done(new Error('Should not be allowed'));
-            }, function () {
-                done();
-            });
+  it('should throw error if roles[$i].inherits[$i2] is not a string', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC({
+          hello: {
+            can: ['hel'],
+            inherits: [1]
+          }
         });
+      },
+      TypeError
+    );
+  });
 
-        it('should allow function operations with correct values', function (done) {
-            rbac.can('user', 'post:save', {ownerId: 1, postId: 1}).then(function () {
-                done();
-            }, function () {
-                done(new Error('Should not reject'));
-            });
+  it('should throw error if roles[$i].inherits[$i2] is not a defined role', () => {
+    assert.throws(
+      () => {
+        rbac = new RBAC({
+          hello: {
+            can: ['hel'],
+            inherits: ['what']
+          }
         });
-        describe('with callback', function () {
-            it('should respect allowed operations', function (done) {
-                rbac.can('user', 'post:add', function (err, can) {
-                    if(err || !can) {
-                        done(new Error ('Should not error'));
-                        return;
-                    }
-                    done();
-                });
-            });
-            it('should reject undefined operations', function (done) {
-                rbac.can('user', 'post:what', function (err, can) {
-                    if(err || !can) {
-                        done();
-                        return;
-                    }
-                    done(new Error('Should not be allowed'));
-                });
-            });
-            it('should reject undefined users', function (done) {
-                rbac.can('what', 'post:add', function (err, can) {
-                    if(err || !can) {
-                        done();
-                        return;
-                    }
-                    done(new Error('Should not be allowed'));
-                });
-            });
+      },
+      TypeError
+    );
+  });
 
-            it('should reject function operations with no operands', function (done) {
-                rbac.can('user', 'post:save', function (err, can) {
-                    if(err || !can) {
-                        done();
-                        return;
-                    }
-                    done(new Error('Should not be allowed'));
-                });
-            });
-
-            it('should reject function operations with rejectable values', function (done) {
-                rbac.can('user', 'post:save', {ownerId: 1, postId: 2}, function (err, can) {
-                    if(err || !can) {
-                        done();
-                        return;
-                    }
-                    done(new Error('Should not be allowed'));
-                });
-            });
-
-            it('should allow function operations with correct values', function (done) {
-                rbac.can('user', 'post:save', {ownerId: 1, postId: 1}, function (err, can) {
-                    if(err || !can) {
-                        done(new Error('Should not reject'));
-                        return;
-                    }
-                    done();
-                });
-            });
-        });
+  it('should create model if all OK', () => {
+    rbac = new RBAC(data.all);
+  });
+  describe('current role operations', () => {
+    it('should respect allowed operations', done => {
+      rbac.can('user', 'post:add')
+        .catch(done)
+        .then(shouldBeAllowed(done));
+    });
+    it('should not allow when undefined operations', done => {
+      rbac.can('user', 'post:what')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+    it('should not allow undefined users', done => {
+      rbac.can('what', 'post:add')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
     });
 
-    describe('parent role operations', function () {
-        it('should respect allowed operations', function (done) {
-            rbac.can('manager', 'account:add').then(function () {
-                done();
-            }, function () {
-                done(new Error('Should not reject'));
-            });
-        });
-        it('should reject undefined operations', function (done) {
-            rbac.can('manager', 'post:what').then(function () {
-                done(new Error('Should not be allowed'));
-            }, function () {
-                done();
-            });
-        });
-        describe('with callback', function () {
-            it('should respect allowed operations', function (done) {
-                rbac.can('manager', 'account:add', function (err, can) {
-                    if(err || !can) {
-                        done(new Error('Should not reject'));
-                        return;
-                    }
-                    done();
-                });
-            });
-            it('should reject undefined operations', function (done) {
-                rbac.can('manager', 'post:what', function (err, can) {
-                    if(err || !can) {
-                        done();
-                        return;
-                    }
-                    done(new Error('Should not be allowed'));
-                });
-            });
-        });
-    });
-    describe('parents parent role operations', function () {
-        it('should respect allowed operations', function (done) {
-            rbac.can('admin', 'account:add').then(function () {
-                done();
-            }, function (err) {
-                done(new Error('Should not reject'));
-            });
-        });
-        it('should reject undefined operations', function (done) {
-            rbac.can('admin', 'post:what').then(function () {
-                done(new Error('Should not be allowed'));
-            }, function () {
-                done();
-            });
-        });
-        describe('with callback', function () {
-            it('should respect allowed operations', function (done) {
-                rbac.can('admin', 'account:add', function (err, can) {
-                    if(err || !can) {
-                        done(new Error('Should not reject'));
-                        return;
-                    }
-                    done();
-                });
-            });
-            it('should reject undefined operations', function (done) {
-                rbac.can('admin', 'post:what', function (err, can) {
-                    if (err || !can) {
-                        done();
-                        return;
-                    }
-                    done(new Error('Should not be allowed'));
-                });
-            });
-        });
+    it('should reject function operations with no operands', done => {
+      rbac.can('user', 'post:save')
+        .then(() => done(new Error('should not be here')))
+        .catch(err => done());
     });
 
-    describe('complex setup', function () {
-        var rbac = new RBAC({
-            signup: {
-                can: [],
-                inherits: []
-            },
-            investor: {
-                can: [
-                    'deal:read'
-                ],
-                inherits: ['signup']
-            },
-            manager: {
-                can: [
-                    'deal:readAdmin'
-                ],
-                inherits: ['investor']
-            },
-            admin: {
-                can: [],
-                inherits: ['manager']
-            }
-        });
+    it('should not allow function operations based on params', done => {
+      rbac.can('user', 'post:save', {ownerId: 1, postId: 2})
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
 
-        it('should throw on deal:readAdmin', function (done) {
-            rbac.can('investor', 'deal:readAdmin')
-                .then(function () {
-                    done(new Error('Should not be allowed'));
-                }, function () {
-                    done();
-                });
-        })
-    })
+    it('should allow function operations with correct values', done => {
+      rbac.can('user', 'post:save', {ownerId: 1, postId: 1})
+        .catch(done)
+        .then(shouldBeAllowed(done));
+    });
+  });
+
+  describe('parent role operations', () => {
+    it('should respect allowed operations', done => {
+      rbac.can('manager', 'account:add')
+        .catch(done)
+        .then(shouldBeAllowed(done));
+    });
+    it('should reject undefined operations', done => {
+      rbac.can('manager', 'post:what')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+  });
+  describe('parents parent role operations', () => {
+    it('should respect allowed operations', done => {
+      rbac.can('admin', 'account:add')
+        .catch(done)
+        .then(shouldBeAllowed(done));
+    });
+    it('should reject undefined operations', done => {
+      rbac.can('admin', 'post:what')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+  });
+  
+  describe('array of roles', () => {
+    it('should not allow if empty array of roles', done => {
+      rbac.can([], 'post:what')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+    it('should not allow if none of the roles is allowed', done => {
+      rbac.can(['user', 'manager'], 'rule the world')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+    it('should allow if one of the roles is allowed', done => {
+      rbac.can(['user', 'admin'], 'post:delete')
+        .catch(done)
+        .then(shouldBeAllowed(done));
+    });
+    it('should allow if one of the roles is allowed', done => {
+      rbac.can(['user', 'admin'], 'post:rename', {ownerId: 1, postId: 1})
+        .catch(done)
+        .then(shouldBeAllowed(done));
+    });
+    it('should allow if one of the roles is allowed', done => {
+      rbac.can(['user', 'admin'], 'post:rename', {ownerId: 1, postId: 2})
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+  });
+
+  describe('complex setup', () => {
+    const rbac = new RBAC({
+      signup: {
+        can: [],
+        inherits: []
+      },
+      investor: {
+        can: [
+          'deal:read'
+        ],
+        inherits: ['signup']
+      },
+      manager: {
+        can: [
+          'deal:readAdmin'
+        ],
+        inherits: ['investor']
+      },
+      admin: {
+        can: [],
+        inherits: ['manager']
+      }
+    });
+
+    it('should reject on deal:readAdmin', done => {
+      rbac.can('investor', 'deal:readAdmin')
+        .catch(done)
+        .then(shouldNotBeAllowed(done));
+    });
+  });
 });

@@ -2,6 +2,14 @@
 
 Promise based HRBAC (Hierarchical Role Based Access Control) implementation for Node.js
 
+## NB! Important changes with v3
+
+v3 is a rewrite of the library as such there are important changes:
+
+* Callbacks are no longer supported
+* Promise rejection will happen on error, otherwise boolean result will be in resolve handler
+* Implementation uses async/await. As such Node >=v8.x  is required
+
 ## Installation
 
     npm install easy-rbac
@@ -14,26 +22,28 @@ Promise based HRBAC (Hierarchical Role Based Access Control) implementation for 
 
 Require and create `rbac` object.
 
-    var RBAC = require('easy-rbac');
-    var rbac = new RBAC(opts);
+    const RBAC = require('easy-rbac');
+    const rbac = new RBAC(opts);
 
 Or use create function
 
-    var rbac = require('easy-rbac').create(opts);
+    const rbac = require('easy-rbac').create(opts);
 
 ## Options
 
-Options for RBAC can be either an object or a function (cb)-> (err, object)
+Options for RBAC can be either an object, function returning a promise or a promise
 
 The expected configuration object example:
     
     {
       user: { // Role name
-        can: ['account', 'post:add', { // list of allowed operations
-          name: 'post:save',
-          when: function (params, callback) {
-            setImmediate(callback, null, params.userId === params.ownerId);
-          }}
+        can: [ // list of allowed operations
+          'account', 
+          'post:add', 
+          { 
+	          name: 'post:save',
+	          when: async (params) => params.userId === params.ownerId
+          }
         ]
       },
       manager: {
@@ -56,9 +66,9 @@ If the element is an object:
 
 * It must have the `name` and `when` properties
   * `name` property must be a string
-  * `when` property must be a function
+  * `when` property must be a function that returns a promise
 
-## Usage can(role, operation, params?, cb? (err, can))
+## Usage can(role, operation, params?)
 
 After initialization you can use the `can` function of the object to check if role should have access to an operation.
 
@@ -66,79 +76,63 @@ The function will return a Promise that will resolve if the role can access the 
 or the user is not allowed to access.
 
     rbac.can('user', 'post:add')
-      .then(function() {
-        // we are allowed to access
-      })
-      .catch(function (err) {
-        // we are not allowed to access
-        if (err.message === 'unauthorized') {
-          // operation is not defined, thus not allowed
-        } 
-        else {
-          // something else went wrong - refer to err object
+      .then(result => {
+        if (result) {
+          // we are allowed access
+        } else {
+          // we are not allowed access
         }
+      })
+      .catch(err => {
+        // something else went wrong - refer to err object
       });
 
 The function accepts parameters as the third parameter, it will be used if there is a `when` type operation in the validation
 hierarchy.
 
     rbac.can('user', 'post:save', {userId: 1, ownerId: 2})
-      .then(function() {
-        // we are allowed to access
-      })
-      .catch(function (err) {
-        // we are not allowed to access
-        if (err.message === 'unauthorized') {
-          // operation is not defined, thus not allowed
-        } 
-        else {
-          // something else went wrong - refer to err object
+      .then(result => {
+        if (result) {
+          // we are allowed access
+        } else {
+          // we are not allowed access
         }
+      })
+      .catch(err => {
+        // something else went wrong - refer to err object
       });
       
-The function can also be called with a callback as a third or fourth parameter accordingly. It will result in (err, result) -> 
-if error occurs, then there is err, if result is negative then operation is not allowed.
+You can also validate multiple roles at the same time, by providing an array of roles.
 
-The previous examples are equivalent to:
-
-    rbac.can('user', 'post:add', function (err, can) {
-      if(err || !can) {
-        // we are not allowed
-      }
-      else {
-        // we are allowed
-      }
-    });
-
-    rbac.can('user', 'post:save', {userId: 1, ownerId: 2}, function (err, can) {
-      if(err || !can) {
-        // we are not allowed
-      }
-      else {
-        // we are allowed
-      }
-    });
+		rbac.can(['user', 'manager'], 'post:save', {userId: 1, ownerId: 2})
+      .then(result => {
+        if (result) {
+          // we are allowed access
+        } else {
+          // we are not allowed access
+        }
+      })
+      .catch(err => {
+        // something else went wrong - refer to err object
+      });
 
 
-If the options of the initialization is a function then it will wait for the initialization to resolve before resolving
+If the options of the initialization is async then it will wait for the initialization to resolve before resolving
 any checks.
 
-    var rbac = require('easy-rbac').create(function (cb) {
-      setTimeout(1000, cb, null, opts);
-    });
+    const rbac = require('easy-rbac')
+      .create(async () => opts);
     
     rbac.can('user', 'post:add')
-      .then(function() {
-        // we are allowed to access
-      })
-      .catch(function (err) {
-        // we are not allowed to access
-        if (err.message === 'unauthorized') {
-          // operation is not defined, thus not allowed
-        } 
-        else {
-          // something else went wrong - refer to err object
+      .then(result => {
+        if (result) {
+          // we are allowed access
+        } else {
+          // we are not allowed access
         }
+      })
+      .catch(err => {
+        // something else went wrong - refer to err object
       });
       
 ## License
