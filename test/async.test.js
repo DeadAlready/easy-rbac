@@ -372,4 +372,87 @@ describe('RBAC async', function() {
             });
         });
     });
+
+    describe('multiple roles', function () {
+        it('should reject undefined role', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(undefined, 'resource:action')
+            .then(function () {
+              done(new Error('should be rejected'));
+            })
+            .catch(function () {
+              done();
+            });
+        });
+
+        it('should reject non-string role', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can([{}], 'resource:action')
+            .then(function () {
+              done(new Error('should be rejected'));
+            })
+            .catch(function () {
+              done();
+            });
+        });
+
+        it('should accept single member array of roles', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(['roleC'], 'resource:action')
+            .then(function () {
+              done();
+            })
+            .catch(done);
+        });
+
+        it('should respect directly allowed operation', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(['roleA', 'roleB'], 'resource:action', function (err, can) {
+                if(err || !can) {
+                  return done(new Error('should be allowed'));
+                }
+                done();
+            });
+        });
+
+        it('should respect directly allowed operation', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(['roleA', 'roleB'], 'resource:action', function (err, can) {
+                if(err || !can) {
+                  return done(new Error('should be allowed'));
+                }
+                done();
+            });
+        });
+
+        it('should respect allowed inherited operation', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(['roleA', 'roleC'], 'resource:action', function (err, can) {
+                if(err || !can) {
+                  return done(new Error('should be allowed'));
+                }
+                done();
+            });
+        });
+
+        it('should reject disallowed operation', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(['roleA'], 'resource:action', function (err, can) {
+                if(!err && !can) {
+                  return done();
+                }
+                done(new Error('should not be allowed'));
+            });
+        });
+
+        it('should reject disallowed inherited operation', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can(['roleD'], 'resource:action', function (err, can) {
+                if(!err && !can) {
+                  return done();
+                }
+                done(new Error('should not be allowed'));
+            });
+        });
+    });
 });

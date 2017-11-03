@@ -312,47 +312,39 @@ describe('RBAC sync', function() {
                 }, function () {
                     done();
                 });
-        })
-    })
+        });
+    });
 
     describe('multiple roles', function () {
-      var rbac = new RBAC({
-        roleA: {
-          can: []
-        },
-        roleB: {
-          can: ['resource:action']
-        },
-        roleC: {
-          can: [],
-          inherits: ['roleB']
-        },
-        roleD: {
-          can: [],
-          inherits: ['roleA']
-        }
-      })
+      var rbac = new RBAC(data.multiRole);
 
       it('should reject undefined role', function (done) {
-        rbac.can(undefined, 'resource:action').then(
-          () => done(new Error('should be rejected')),
-          err => done()
-        )
-      })
+        rbac.can(undefined, 'resource:action')
+          .then(function () {
+            done(new Error('should be rejected'));
+          })
+          .catch(function () {
+            done();
+          });
+      });
 
       it('should reject non-string role', function (done) {
-        rbac.can([{}], 'resource:action').then(
-          () => done(new Error('should be rejected')),
-          err => done()
-        )
-      })
+        rbac.can([{}], 'resource:action')
+          .then(function () {
+            done(new Error('should be rejected'));
+          })
+          .catch(function () {
+            done();
+          });
+      });
 
       it('should accept single member array of roles', function (done) {
-        rbac.can(['roleC'], 'resource:action').then(
-          () => done(),
-          err => done(err)
-        )
-      })
+        rbac.can(['roleC'], 'resource:action')
+          .then(function () {
+            done();
+          })
+          .catch(done);
+      });
 
       it('should respect directly allowed operation', function (done) {
         rbac.can(['roleA', 'roleB'], 'resource:action', function (err, can) {
@@ -360,8 +352,8 @@ describe('RBAC sync', function() {
             return done(new Error('should be allowed'));
           }
           done();
-        })
-      })
+        });
+      });
 
       it('should respect directly allowed operation', function (done) {
         rbac.can(['roleA', 'roleB'], 'resource:action', function (err, can) {
@@ -369,8 +361,8 @@ describe('RBAC sync', function() {
             return done(new Error('should be allowed'));
           }
           done();
-        })
-      })
+        });
+      });
 
       it('should respect allowed inherited operation', function (done) {
         rbac.can(['roleA', 'roleC'], 'resource:action', function (err, can) {
@@ -378,8 +370,8 @@ describe('RBAC sync', function() {
             return done(new Error('should be allowed'));
           }
           done();
-        })
-      })
+        });
+      });
 
       it('should reject disallowed operation', function (done) {
         rbac.can(['roleA'], 'resource:action', function (err, can) {
@@ -387,8 +379,8 @@ describe('RBAC sync', function() {
             return done();
           }
           done(new Error('should not be allowed'));
-        })
-      })
+        });
+      });
 
       it('should reject disallowed inherited operation', function (done) {
         rbac.can(['roleD'], 'resource:action', function (err, can) {
@@ -396,7 +388,7 @@ describe('RBAC sync', function() {
             return done();
           }
           done(new Error('should not be allowed'));
-        })
-      })
+        });
+      });
     });
 });

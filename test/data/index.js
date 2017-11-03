@@ -25,4 +25,22 @@ var roles = {
     }
 };
 
+var multiRole = {
+  roleA: {
+    can: []
+  },
+  roleB: {
+    can: ['resource:action']
+  },
+  roleC: {
+    can: [],
+    inherits: ['roleB']
+  },
+  roleD: {
+    can: [],
+    inherits: ['roleA']
+  }
+};
+
 module.exports.all = roles;
+module.exports.multiRole = multiRole;

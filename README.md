@@ -96,6 +96,23 @@ hierarchy.
         }
       });
       
+The function also accepts an array of roles as the first parameter. It will return positively if one of the given roles has access
+and reject if none of them do.
+
+    rbac.can(['user', 'manager'], 'post:save', {userId: 1, ownerId: 2})
+      .then(function() {
+        // we are allowed to access
+      })
+      .catch(function (err) {
+        // we are not allowed to access
+        if (err.message === 'unauthorized') {
+          // operation is not defined, thus not allowed
+        } 
+        else {
+          // something else went wrong - refer to err object
+        }
+      });
+      
 The function can also be called with a callback as a third or fourth parameter accordingly. It will result in (err, result) -> 
 if error occurs, then there is err, if result is negative then operation is not allowed.
 
@@ -111,6 +128,15 @@ The previous examples are equivalent to:
     });
 
     rbac.can('user', 'post:save', {userId: 1, ownerId: 2}, function (err, can) {
+      if(err || !can) {
+        // we are not allowed
+      }
+      else {
+        // we are allowed
+      }
+    });
+    
+    rbac.can(['user', 'manager'], 'post:save', {userId: 1, ownerId: 2}, function (err, can) {
       if(err || !can) {
         // we are not allowed
       }
