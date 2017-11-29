@@ -385,6 +385,17 @@ describe('RBAC async', function() {
             });
         });
 
+        it('should reject empty roles', function (done) {
+          (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
+            .can([], 'resource:action')
+            .then(function () {
+              done(new Error('should be rejected'));
+            })
+            .catch(function () {
+              done();
+            });
+        });
+
         it('should reject non-string role', function (done) {
           (new RBAC(function (cb) { setTimeout(cb, 100, null, data.multiRole) }))
             .can([{}], 'resource:action')

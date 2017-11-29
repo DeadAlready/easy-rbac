@@ -328,6 +328,16 @@ describe('RBAC sync', function() {
           });
       });
 
+      it('should reject empty roles', function (done) {
+        rbac.can([], 'resource:action')
+          .then(function () {
+            done(new Error('should be rejected'));
+          })
+          .catch(function () {
+            done();
+          });
+      });
+
       it('should reject non-string role', function (done) {
         rbac.can([{}], 'resource:action')
           .then(function () {
