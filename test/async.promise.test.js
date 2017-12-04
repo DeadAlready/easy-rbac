@@ -4,7 +4,7 @@
 const RBAC = require('../lib/rbac');
 let data = require('./data');
 
-const {shouldBeAllowed, shouldNotBeAllowed} = require('./utils');
+const {shouldBeAllowed, shouldNotBeAllowed, catchError} = require('./utils');
 
 describe('RBAC async', function() {
   it('should reject if function throws', function (done) {
@@ -92,19 +92,19 @@ describe('RBAC async', function() {
     it('should respect operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('user', 'post:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should reject undefined operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('user', 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
     it('should reject undefined users', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('what', 'post:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
 
@@ -118,14 +118,42 @@ describe('RBAC async', function() {
     it('should reject function operations with rejectable values', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('user', 'post:save', {ownerId: 1, postId: 2})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
 
     it('should allow function operations with correct values', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('user', 'post:save', {ownerId: 1, postId: 1})
-        .catch(done)
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it('should reject conditional glob operations with no params', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('user', 'user:save')
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it('should reject conditional glob operations with wrong params', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('user', 'user:save', {userId: 1, id: 2})
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it('should allow glob operations with correct params', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('user', 'user:save', {userId: 1, id: 1})
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it('should prioritize non glob operations', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('user', 'user:create')
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
   });
@@ -134,28 +162,48 @@ describe('RBAC async', function() {
     it('should respect allowed operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('manager', 'account:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should reject undefined operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('manager', 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
+    });
+
+    it('should respect allowed glob operations', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('manager', 'account:whatever')
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+    it('should handle overwritten glob operations', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('manager', 'user:save', {regionId: 1, userRegionId: 1})
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
     });
   });
   describe('parents parent role operations', function () {
     it('should respect allowed operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('admin', 'account:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should reject undefined operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('admin', 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
+    });
+
+    it('should respect glob operations', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can('admin', 'user:what')
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
     });
   });
 
@@ -163,13 +211,13 @@ describe('RBAC async', function() {
     it('should respect allowed operations', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('manager', 'post:create', {postId: 1, ownerId: 1})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should reject not allowed operation', function (done) {
       (new RBAC(Promise.resolve(data.all)))
         .can('manager', 'post:create', {postId: 1, ownerId: 2})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
   });
@@ -178,32 +226,39 @@ describe('RBAC async', function() {
     it('should not allow if empty array of roles', done => {
       (new RBAC(Promise.resolve(data.all)))
         .can([], 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
     it('should not allow if none of the roles is allowed', done => {
       (new RBAC(Promise.resolve(data.all)))
         .can(['user', 'manager'], 'rule the world')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
     it('should allow if one of the roles is allowed', done => {
       (new RBAC(Promise.resolve(data.all)))
         .can(['user', 'admin'], 'post:delete')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should allow if one of the roles is allowed', done => {
       (new RBAC(Promise.resolve(data.all)))
         .can(['user', 'admin'], 'post:rename', {ownerId: 1, postId: 1})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should allow if one of the roles is allowed', done => {
       (new RBAC(Promise.resolve(data.all)))
         .can(['user', 'admin'], 'post:rename', {ownerId: 1, postId: 2})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
+    });
+
+    it('should allow if one of the roles is allowed through glob', done => {
+      (new RBAC(Promise.resolve(data.all)))
+        .can(['user', 'manager'], 'user:save', {regionId: 1, userRegionId: 1})
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
     });
   });
 });

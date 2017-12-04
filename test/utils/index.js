@@ -1,5 +1,6 @@
 'use strict';
 
+module.exports.catchError = catchError;
 module.exports.shouldBeAllowed = shouldBeAllowed;
 module.exports.shouldNotBeAllowed = shouldNotBeAllowed;
 
@@ -22,5 +23,11 @@ function shouldNotBeAllowed(done) {
     } else {
       done();
     }
+  }
+}
+
+function catchError(done) {
+  return function (err) {
+    return false;
   }
 }

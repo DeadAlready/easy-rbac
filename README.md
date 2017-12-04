@@ -43,11 +43,16 @@ The expected configuration object example:
           { 
 	          name: 'post:save',
 	          when: async (params) => params.userId === params.ownerId
+          },
+          'user:create',
+          {
+            name: 'user:*',
+            when: async (params) => params.id === params.userId
           }
         ]
       },
       manager: {
-        can: ['post:save', 'post:delete'],
+        can: ['post:save', 'post:delete', 'account:*'],
         inherits: ['user']
       },
       admin: {
@@ -67,6 +72,26 @@ If the element is an object:
 * It must have the `name` and `when` properties
   * `name` property must be a string
   * `when` property must be a function that returns a promise
+  
+## Globs (v3.1+)
+
+Each name of operation can include `*` character as a glob match. It will match anything in its stead. So something like `account:*` will match everything starting with `account:`.
+
+Specific operations are always prioritized over glob operations. This means that if you have a definition like:
+
+    {
+      user: {
+        can: [
+          'user:create',
+          {
+            name: 'user:*',
+            when: async (params) => params.id === params.userId
+          }
+        ]
+      }
+    }
+    
+Then `user:create` will not run the provided when operation, whereas everything else starting with `user:` does
 
 ## Usage can(role, operation, params?)
 

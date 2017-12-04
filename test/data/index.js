@@ -14,22 +14,32 @@ var roles = {
       {
         name: 'post:create',
         when: async (params) => params.ownerId === params.postId
+      },
+      'user:create',
+      {
+        name: 'user:*',
+        when: async (params) => params.id === params.userId
       }
     ]
   },
   manager: {
     can: [
+      'account:*',
       'post:save', 
       'post:delete',
       {
         name: 'post:rename',
         when: async (params) => params.ownerId === params.postId
+      },
+      {
+        name: 'user:*',
+        when: async (params) => params.regionId === params.userRegionId
       }
     ],
     inherits: ['user']
   },
   admin: {
-    can: ['rule the world'],
+    can: ['rule the world', 'user:*'],
     inherits: ['manager']
   }
 };

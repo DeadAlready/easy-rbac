@@ -5,7 +5,7 @@ let data = require('./data');
 
 const assert = require('assert');
 
-const {shouldBeAllowed, shouldNotBeAllowed} = require('./utils');
+const {shouldBeAllowed, shouldNotBeAllowed, catchError} = require('./utils');
 
 describe('RBAC sync', () => {
   let rbac;
@@ -108,17 +108,17 @@ describe('RBAC sync', () => {
   describe('current role operations', () => {
     it('should respect allowed operations', done => {
       rbac.can('user', 'post:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should not allow when undefined operations', done => {
       rbac.can('user', 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
     it('should not allow undefined users', done => {
       rbac.can('what', 'post:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
 
@@ -130,13 +130,38 @@ describe('RBAC sync', () => {
 
     it('should not allow function operations based on params', done => {
       rbac.can('user', 'post:save', {ownerId: 1, postId: 2})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
 
     it('should allow function operations with correct values', done => {
       rbac.can('user', 'post:save', {ownerId: 1, postId: 1})
-        .catch(done)
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+
+    it('should reject conditional glob operations with no params', done => {
+      rbac.can('user', 'user:save')
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it('should reject conditional glob operations with wrong params', done => {
+      rbac.can('user', 'user:save', {userId: 1, id: 2})
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it('should allow glob operations with correct params', done => {
+      rbac.can('user', 'user:save', {userId: 1, id: 1})
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it('should prioritize non glob operations', done => {
+      rbac.can('user', 'user:create')
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
   });
@@ -144,53 +169,77 @@ describe('RBAC sync', () => {
   describe('parent role operations', () => {
     it('should respect allowed operations', done => {
       rbac.can('manager', 'account:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should reject undefined operations', done => {
       rbac.can('manager', 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
+    });
+
+    it('should respect allowed glob operations', done => {
+      rbac.can('manager', 'account:whatever')
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+    it('should handle overwritten glob operations', done => {
+      rbac.can('manager', 'user:save', {regionId: 1, userRegionId: 1})
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
     });
   });
   describe('parents parent role operations', () => {
     it('should respect allowed operations', done => {
       rbac.can('admin', 'account:add')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should reject undefined operations', done => {
       rbac.can('admin', 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
+    });
+
+    it('should respect glob operations', done => {
+      rbac.can('admin', 'user:what')
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
     });
   });
   
   describe('array of roles', () => {
     it('should not allow if empty array of roles', done => {
       rbac.can([], 'post:what')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
     it('should not allow if none of the roles is allowed', done => {
       rbac.can(['user', 'manager'], 'rule the world')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
     it('should allow if one of the roles is allowed', done => {
       rbac.can(['user', 'admin'], 'post:delete')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
     it('should allow if one of the roles is allowed', done => {
       rbac.can(['user', 'admin'], 'post:rename', {ownerId: 1, postId: 1})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldBeAllowed(done));
     });
-    it('should allow if one of the roles is allowed', done => {
+    it('should not allow if none of the roles is allowed', done => {
       rbac.can(['user', 'admin'], 'post:rename', {ownerId: 1, postId: 2})
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
+    });
+
+
+    it('should allow if one of the roles is allowed through glob', done => {
+      rbac.can(['user', 'manager'], 'user:save', {regionId: 1, userRegionId: 1})
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
     });
   });
 
@@ -220,7 +269,7 @@ describe('RBAC sync', () => {
 
     it('should reject on deal:readAdmin', done => {
       rbac.can('investor', 'deal:readAdmin')
-        .catch(done)
+        .catch(catchError(done))
         .then(shouldNotBeAllowed(done));
     });
   });
