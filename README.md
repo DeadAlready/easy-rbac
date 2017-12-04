@@ -73,11 +73,11 @@ If the element is an object:
   * `name` property must be a string
   * `when` property must be a function that returns a promise
   
-## Globs (v3.1+)
+## Wildcards (v3.1+)
 
-Each name of operation can include `*` character as a glob match. It will match anything in its stead. So something like `account:*` will match everything starting with `account:`.
+Each name of operation can include `*` character as a wildcard match. It will match anything in its stead. So something like `account:*` will match everything starting with `account:`.
 
-Specific operations are always prioritized over glob operations. This means that if you have a definition like:
+Specific operations are always prioritized over wildcard operations. This means that if you have a definition like:
 
     {
       user: {
