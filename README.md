@@ -106,10 +106,10 @@ statically defined role value
 
 or as a role value returned by a function
 
-    function getRole() {
+    function getRole(req, res) {
       return 'user';
     }
-    router.post('/add', rbac.can(async getRole(), 'post:add'), function(req, res) { }
+    router.post('/add', rbac.can(async (req: Request, res: Response) => getRole(req, res), 'post:add'), function(req, res) { }
 
 ## Usage can(role, operation, params?)
 
