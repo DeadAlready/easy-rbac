@@ -93,6 +93,24 @@ Specific operations are always prioritized over wildcard operations. This means 
     
 Then `user:create` will not run the provided when operation, whereas everything else starting with `user:` does
 
+## Middleware
+
+provide middleware definition on initialization and use rbac.can in route middleware checks
+
+    const rbac = require('easy-rbac');
+    app.use(rbac.main(rbac_definition));
+
+statically defined role value
+
+    router.post('/add', rbac.can('user', 'post:add'), function(req, res) { }
+
+or as a role value returned by a function
+
+    function getRole() {
+      return 'user';
+    }
+    router.post('/add', rbac.can(async getRole(), 'post:add'), function(req, res) { }
+
 ## Usage can(role, operation, params?)
 
 After initialization you can use the `can` function of the object to check if role should have access to an operation.
