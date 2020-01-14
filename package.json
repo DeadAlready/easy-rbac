@@ -1,6 +1,6 @@
 {
   "name": "easy-rbac",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "RBAC implementation for Node.js",
   "main": "lib/rbac.js",
   "scripts": {
@@ -25,7 +25,7 @@
   "devDependencies": {
     "mocha": "^2.3.3"
   },
-  "engines" : {
-    "node" : ">=8.0"
+  "engines": {
+    "node": ">=8.0"
   }
 }
