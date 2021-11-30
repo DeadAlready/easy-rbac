@@ -8,7 +8,7 @@ v3 is a rewrite of the library as such there are important changes:
 
 * Callbacks are no longer supported
 * Promise rejection will happen on error, otherwise boolean result will be in resolve handler
-* Implementation uses async/await. As such Node >=v8.x  is required
+* As of v3.2 Node >=v10.x  is required
 
 ## Installation
 
