@@ -2,47 +2,56 @@
 
 Promise based HRBAC (Hierarchical Role Based Access Control) implementation for Node.js
 
+## v4
+
+v4 is a backwards compatible rewrite for TypeScript
+
+- Adds typescript types
+- removes debug dependency
+
 ## NB! Important changes with v3
 
 v3 is a rewrite of the library as such there are important changes:
 
-* Callbacks are no longer supported
-* Promise rejection will happen on error, otherwise boolean result will be in resolve handler
-* As of v3.2 Node >=v10.x  is required
+- Callbacks are no longer supported
+- Promise rejection will happen on error, otherwise boolean result will be in resolve handler
+- As of v3.2 Node >=v10.x is required
 
 ## Installation
 
     npm install easy-rbac
-    
-## Test
-
-    npm test
 
 ## Initialization
 
 Require and create `rbac` object.
 
-    const RBAC = require('easy-rbac');
+    import RBAC from 'easy-rbac';
     const rbac = new RBAC(opts);
 
 Or use create function
 
-    const rbac = require('easy-rbac').create(opts);
+    import RBAC from 'easy-rbac';
+    const rbac = RBAC.create(opts);
+
+Or directly
+
+    import { create } from 'easy-rbac';
+    const rbac = create(opts);
 
 ## Options
 
 Options for RBAC can be either an object, function returning a promise or a promise
 
 The expected configuration object example:
-    
+
     {
       user: { // Role name
         can: [ // list of allowed operations
-          'account', 
-          'post:add', 
-          { 
-	          name: 'post:save',
-	          when: async (params) => params.userId === params.ownerId
+          'account',
+          'post:add',
+          {
+              name: 'post:save',
+              when: async (params) => params.userId === params.ownerId
           },
           'user:create',
           {
@@ -63,16 +72,16 @@ The expected configuration object example:
 
 The `roles` property is required and must be an object. The keys of this object are counted to be the names of roles.
 
-Each role must have a `can` property, which is an array. Elements in the array can be strings or objects. 
+Each role must have a `can` property, which is an array. Elements in the array can be strings or objects.
 
-If the element is a string then it is expected to be the name of the permitted operation. 
+If the element is a string then it is expected to be the name of the permitted operation.
 
 If the element is an object:
 
-* It must have the `name` and `when` properties
-  * `name` property must be a string
-  * `when` property must be a function that returns a promise
-  
+- It must have the `name` and `when` properties
+  - `name` property must be a string
+  - `when` property must be a function that returns a Promise<boolean>
+
 ## Wildcards (v3.1+)
 
 Each name of operation can include `*` character as a wildcard match. It will match anything in its stead. So something like `account:*` will match everything starting with `account:`.
@@ -90,7 +99,7 @@ Specific operations are always prioritized over wildcard operations. This means 
         ]
       }
     }
-    
+
 Then `user:create` will not run the provided when operation, whereas everything else starting with `user:` does
 
 ## Usage can(role, operation, params?)
@@ -100,66 +109,41 @@ After initialization you can use the `can` function of the object to check if ro
 The function will return a Promise that will resolve if the role can access the operation or reject if something goes wrong
 or the user is not allowed to access.
 
-    rbac.can('user', 'post:add')
-      .then(result => {
-        if (result) {
-          // we are allowed access
-        } else {
-          // we are not allowed access
-        }
-      })
-      .catch(err => {
-        // something else went wrong - refer to err object
-      });
+    if (await rbac.can('user', 'post:add')) {
+      // we are allowed access
+    } else {
+      // we are not allowed access
+    }
 
 The function accepts parameters as the third parameter, it will be used if there is a `when` type operation in the validation
 hierarchy.
 
-    rbac.can('user', 'post:save', {userId: 1, ownerId: 2})
-      .then(result => {
-        if (result) {
-          // we are allowed access
-        } else {
-          // we are not allowed access
-        }
-      })
-      .catch(err => {
-        // something else went wrong - refer to err object
-      });
-      
+    if (await rbac.can('user', 'post:save', {userId: 1, ownerId: 2})) {
+      // we are allowed access
+    } else {
+      // we are not allowed access
+    }
+
 You can also validate multiple roles at the same time, by providing an array of roles.
 
-		rbac.can(['user', 'manager'], 'post:save', {userId: 1, ownerId: 2})
-      .then(result => {
-        if (result) {
-          // we are allowed access
-        } else {
-          // we are not allowed access
-        }
-      })
-      .catch(err => {
-        // something else went wrong - refer to err object
-      });
-
+    if (await rbac.can(['user', 'manager'], 'post:save', {userId: 1, ownerId: 2})) {
+      // we are allowed access
+    } else {
+      // we are not allowed access
+    }
 
 If the options of the initialization is async then it will wait for the initialization to resolve before resolving
 any checks.
 
-    const rbac = require('easy-rbac')
-      .create(async () => opts);
-    
-    rbac.can('user', 'post:add')
-      .then(result => {
-        if (result) {
-          // we are allowed access
-        } else {
-          // we are not allowed access
-        }
-      })
-      .catch(err => {
-        // something else went wrong - refer to err object
-      });
-      
+    import RBAC from 'easy-rbac';
+    const rbac = RBAC.create(async () => opts);
+
+    if (await rbac.can('user', 'post:add')) {
+      // we are allowed access
+    } else {
+      // we are not allowed access
+    }
+
 ## License
 
 The MIT License (MIT)
