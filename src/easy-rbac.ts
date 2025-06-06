@@ -1,6 +1,5 @@
 import {
   AsyncRoleDefinitions,
-  RBACRole,
   RBACRoleDefinitions,
   RBACWhen,
 } from "./easy-rbac/types";
@@ -63,8 +62,8 @@ class RBAC<Role extends string, InheritRole extends Role> {
     this.roles.clear();
 
     // Standardize roles
-    Object.entries(roles).forEach(([role, def]) => {
-      const roleDef = def as RBACRole<InheritRole>;
+    Object.keys(roles).forEach((role) => {
+      const roleDef = roles[role as Role];
       const roleObj: RBACRoleObject<InheritRole> = {
         can: {},
         canGlob: [],
@@ -279,10 +278,14 @@ function getVariable(): string | undefined {
     // @ts-ignore
     return window.DEBUG;
   } else if (
+    // @ts-ignore
     typeof process !== "undefined" &&
+    // @ts-ignore
     process.versions &&
+    // @ts-ignore
     process.versions.node
   ) {
+    // @ts-ignore
     return process.env.DEBUG;
   }
   return undefined;
@@ -295,20 +298,6 @@ function isGlob(str: string) {
 function globToRegex(str: string) {
   return new RegExp("^" + str.replace(/\*/g, ".*"));
 }
-
-// async function any(promises: Promise<boolean>[]): Promise<boolean> {
-//   return Promise.any(
-//     promises.map((p) =>
-//       p.then((val) => {
-//         if (val) {
-//           return val;
-//         }
-//         // need to reject
-//         throw new Error("not allowed");
-//       })
-//     )
-//   ).catch(() => false);
-// }
 
 async function any(promises: Promise<boolean>[]): Promise<boolean> {
   if (promises.length < 1) {
