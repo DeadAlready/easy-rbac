@@ -267,4 +267,50 @@ describe("RBAC sync", () => {
         .then(shouldNotBeAllowed(done));
     });
   });
+
+  describe("complex setup with erroneous when functions", () => {
+    const rbac = new RBAC({
+      signup: {
+        can: [],
+        inherits: [],
+      },
+      investor: {
+        can: [
+          {
+            name: "deal:read",
+            when: async () => {
+              throw new Error("missing params");
+            },
+          },
+        ],
+        inherits: ["signup"],
+      },
+      manager: {
+        can: ["deal:readAdmin"],
+        inherits: ["investor"],
+      },
+      admin: {
+        can: [],
+        inherits: ["manager"],
+      },
+    });
+
+    it("should throw error on deal:read", (done) => {
+      assert
+        .rejects(rbac.can("investor", "deal:read"), {
+          message: "missing params",
+        })
+        .then(done)
+        .catch(done);
+    });
+
+    it("should throw error on deal:read for multiple roles", (done) => {
+      assert
+        .rejects(rbac.can(["investor", "manager"], "deal:read"), {
+          message: "missing params",
+        })
+        .then(done)
+        .catch(done);
+    });
+  });
 });

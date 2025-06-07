@@ -201,7 +201,7 @@ class RBAC<Role extends string, InheritRole extends Role> {
         debug("No inherit, reject false");
         return false;
       }
-      // Return if any parent resolves true or all reject
+      // Return if any parent resolves true or all return false
       return any(
         $role.inherits.map((parent) => {
           debug("Try from " + parent);
@@ -223,7 +223,10 @@ class RBAC<Role extends string, InheritRole extends Role> {
         return $role.can[operation](params);
       } catch (e) {
         debug("conditional function threw", e);
-        return false;
+        if (e instanceof Error) {
+          e.message = `role: ${role} when: ${e.message}`;
+        }
+        throw e;
       }
     }
 
@@ -240,7 +243,10 @@ class RBAC<Role extends string, InheritRole extends Role> {
         return globMatch.when(params);
       } catch (e) {
         debug("conditional function threw", e);
-        return false;
+        if (e instanceof Error) {
+          e.message = `role: ${role} when: ${e.message}`;
+        }
+        throw e;
       }
     }
 
@@ -306,10 +312,10 @@ async function any(promises: Promise<boolean>[]): Promise<boolean> {
   return Promise.all(
     promises.map(($p) =>
       $p
-        .catch((err) => {
-          debug("Underlying promise rejected", err);
-          return false;
-        })
+        // .catch((err) => {
+        //   debug("Underlying promise rejected", err);
+        //   return false;
+        // })
         .then((result) => {
           if (result) {
             throw new Error("authorized");
@@ -318,5 +324,10 @@ async function any(promises: Promise<boolean>[]): Promise<boolean> {
     )
   )
     .then(() => false)
-    .catch((err) => err && err.message === "authorized");
+    .catch((err) => {
+      if (err && err.message === "authorized") {
+        return true;
+      }
+      throw err;
+    });
 }
