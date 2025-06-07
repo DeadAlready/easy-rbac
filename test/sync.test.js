@@ -313,4 +313,154 @@ describe("RBAC sync", () => {
         .catch(done);
     });
   });
+
+  describe("complex setup with regexs", () => {
+    const rbac = new RBAC({
+      signup: {
+        can: [],
+        inherits: [],
+      },
+      investor: {
+        can: [
+          {
+            name: "deal",
+            regex: /^deal:(read|write|admin)$/,
+          },
+          {
+            name: "sale",
+            regex: "sale:(read|write|admin)",
+          },
+          {
+            name: "deal:rede",
+            regex: /^deal:rede..$/,
+            when: async ({ owner }) => !Boolean(owner),
+          },
+          {
+            name: "sale:rede",
+            regex: "sale:rede..",
+            when: async ({ owner }) => !Boolean(owner),
+          },
+        ],
+        inherits: ["signup"],
+      },
+      manager: {
+        can: [
+          "deal:readAdmin",
+          {
+            name: "deal:redeal",
+            regex: /^deal:redea.$/,
+            when: async ({ owner }) => Boolean(owner),
+          },
+          {
+            name: "deal:redeal",
+            regex: "sale:redea.",
+            when: async ({ owner }) => Boolean(owner),
+          },
+        ],
+        inherits: ["investor"],
+      },
+      admin: {
+        can: [],
+        inherits: ["manager"],
+      },
+    });
+
+    it("should reject on deal:readAdmin", (done) => {
+      rbac
+        .can("investor", "deal:readAdmin")
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it("should allow on deal:admin", (done) => {
+      rbac
+        .can("investor", "deal:admin")
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should not allow on deal:redeal if not owner", (done) => {
+      rbac
+        .can("manager", "deal:redeal", { owner: false })
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it("should not allow on deal:redeab if not owner", (done) => {
+      rbac
+        .can("manager", "deal:redeab", { owner: false })
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it("should allow on deal:redeal if owner", (done) => {
+      rbac
+        .can("manager", "deal:redeal", { owner: true })
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should allow on deal:redeab if owner", (done) => {
+      rbac
+        .can("manager", "deal:redeab", { owner: true })
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should allow on deal:redett if not owner", (done) => {
+      rbac
+        .can("manager", "deal:redett", { owner: false })
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should reject on sale:readAdmin", (done) => {
+      rbac
+        .can("investor", "sale:readAdmin")
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it("should allow on sale:admin", (done) => {
+      rbac
+        .can("investor", "sale:admin")
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should not allow on sale:redeal if not owner", (done) => {
+      rbac
+        .can("manager", "sale:redeal", { owner: false })
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it("should not allow on sale:redeab if not owner", (done) => {
+      rbac
+        .can("manager", "sale:redeab", { owner: false })
+        .catch(catchError(done))
+        .then(shouldNotBeAllowed(done));
+    });
+
+    it("should allow on sale:redeal if owner", (done) => {
+      rbac
+        .can("manager", "sale:redeal", { owner: true })
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should allow on sale:redeab if owner", (done) => {
+      rbac
+        .can("manager", "sale:redeab", { owner: true })
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+
+    it("should allow on sale:redett if not owner", (done) => {
+      rbac
+        .can("manager", "sale:redett", { owner: false })
+        .catch(catchError(done))
+        .then(shouldBeAllowed(done));
+    });
+  });
 });

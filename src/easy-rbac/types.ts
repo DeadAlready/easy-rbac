@@ -4,7 +4,13 @@ export type RBACCan =
   | string
   | {
       name: string;
+      regex?: RegExp | string;
       when: RBACWhen;
+    }
+  | {
+      name: string;
+      regex: RegExp | string;
+      when?: RBACWhen;
     };
 
 export type RBACRole<Role extends string> = {

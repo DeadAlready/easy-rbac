@@ -8,9 +8,9 @@ type RBACRoleObject<Role extends string> = {
   can: {
     [key: string]: boolean | RBACWhen;
   };
-  canGlob: {
-    name: RegExp;
-    original: string;
+  canRegex: {
+    name: string;
+    regex: RegExp;
     when?: RBACWhen;
   }[];
   inherits: Role[];
@@ -66,13 +66,14 @@ class RBAC<Role extends string, InheritRole extends Role> {
       const roleDef = roles[role as Role];
       const roleObj: RBACRoleObject<InheritRole> = {
         can: {},
-        canGlob: [],
+        canRegex: [],
         inherits: [],
       };
       // Check can definition
       if (!Array.isArray(roleDef.can)) {
         throw new TypeError("Expected roles[" + role + "].can to be an array");
       }
+      // validate inheritance
       if (roleDef.inherits) {
         if (!Array.isArray(roleDef.inherits)) {
           throw new TypeError(
@@ -82,7 +83,7 @@ class RBAC<Role extends string, InheritRole extends Role> {
         roleDef.inherits.forEach((child) => {
           if (typeof child !== "string") {
             throw new TypeError(
-              "Expected roles[" + role + "].inherits element"
+              "Expected roles[" + role + "].inherits element to be string"
             );
           }
           if (!roles[child]) {
@@ -99,27 +100,45 @@ class RBAC<Role extends string, InheritRole extends Role> {
           if (!isGlob(operation)) {
             roleObj.can[operation] = true;
           } else {
-            roleObj.canGlob.push({
-              name: globToRegex(operation),
-              original: operation,
+            roleObj.canRegex.push({
+              name: operation,
+              regex: globToRegex(operation),
             });
           }
           return;
         }
-        // Check if operation has a .when function
+
+        if (typeof operation !== "object") {
+          throw new TypeError(`Unexpected operation type ${operation}`);
+        }
+
+        // Check if operation has a .when function or a .regex
         if (
-          typeof operation.when === "function" &&
-          typeof operation.name === "string"
+          typeof operation.name === "string" &&
+          (typeof operation.when === "function" ||
+            operation.regex instanceof RegExp ||
+            typeof operation.regex === "string")
         ) {
-          if (!isGlob(operation.name)) {
-            roleObj.can[operation.name] = operation.when;
-          } else {
-            roleObj.canGlob.push({
-              name: globToRegex(operation.name),
-              original: operation.name,
-              when: operation.when,
-            });
+          if (!isGlob(operation.name) && !operation.regex) {
+            roleObj.can[operation.name] = operation.when!;
+            return;
           }
+          // Create regex for matching
+          const regex = (() => {
+            if (operation.regex instanceof RegExp) {
+              return operation.regex;
+            }
+            if (typeof operation.regex === "string") {
+              return strToRegex(operation.regex);
+            }
+            return globToRegex(operation.name);
+          })();
+
+          roleObj.canRegex.push({
+            name: operation.name,
+            regex,
+            when: operation.when,
+          });
           return;
         }
         throw new TypeError(`Unexpected operation type ${operation}`);
@@ -193,7 +212,7 @@ class RBAC<Role extends string, InheritRole extends Role> {
     // IF this operation is not defined at current level try higher
     if (
       !$role.can[operation] &&
-      !$role.canGlob.find((glob) => glob.name.test(operation))
+      !$role.canRegex.find((glob) => glob.regex.test(operation))
     ) {
       debug("Not allowed at this level, try higher");
       // If no parents reject
@@ -231,28 +250,43 @@ class RBAC<Role extends string, InheritRole extends Role> {
     }
 
     // Try globs
-    let globMatch = $role.canGlob.find((glob) => glob.name.test(operation));
-    if (globMatch && !globMatch.when) {
-      debug(`We have a globmatch (${globMatch.original}), resolve`);
+    let globMatches = $role.canRegex.filter((glob) =>
+      glob.regex.test(operation)
+    );
+    if (!globMatches.length) {
+      // No operation reject as false
+      debug("Shouldnt have reached here, something wrong, reject");
+      throw new Error("something went wrong");
+    }
+
+    const nonWhenGlobMatch = globMatches.find((glob) => !glob.when);
+    if (nonWhenGlobMatch) {
+      debug(
+        `We have a nonconditional globmatch (${nonWhenGlobMatch.name}), resolve`
+      );
       return true;
     }
 
-    if (globMatch && globMatch.when) {
-      debug(`We have a conditional globmatch (${globMatch.original}), run fn`);
-      try {
-        return globMatch.when(params);
-      } catch (e) {
-        debug("conditional function threw", e);
-        if (e instanceof Error) {
-          e.message = `role: ${role} when: ${e.message}`;
+    return any(
+      globMatches.map(async (glob) => {
+        debug(`We have a conditional globmatch (${glob.name}), run fn`);
+        if (!glob.when) {
+          debug(
+            "Shouldnt have reached here, all remaining globs should have fn, something wrong, reject"
+          );
+          throw new Error("something went wrong");
         }
-        throw e;
-      }
-    }
-
-    // No operation reject as false
-    debug("Shouldnt have reached here, something wrong, reject");
-    throw new Error("something went wrong");
+        try {
+          return await glob.when(params);
+        } catch (e) {
+          debug("conditional function threw", e);
+          if (e instanceof Error) {
+            e.message = `role: ${role} when: ${e.message}`;
+          }
+          throw e;
+        }
+      })
+    );
   }
 
   static create<Role extends string, InheritRole extends Role>(
@@ -299,6 +333,10 @@ function getVariable(): string | undefined {
 
 function isGlob(str: string) {
   return str.includes("*");
+}
+
+function strToRegex(str: string) {
+  return new RegExp("^" + str + "$");
 }
 
 function globToRegex(str: string) {

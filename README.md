@@ -4,10 +4,12 @@ Promise based HRBAC (Hierarchical Role Based Access Control) implementation for 
 
 ## v4
 
-v4 is a backwards compatible rewrite for TypeScript
+v4 is a backwards compatible rewrite for TypeScript. It adds support for regex operations.
 
 - Adds typescript types
 - removes debug dependency
+- adds regex support
+- bubbles up .when execution errors
 
 ## NB! Important changes with v3
 
@@ -57,7 +59,20 @@ The expected configuration object example:
           {
             name: 'user:*',
             when: async (params) => params.id === params.userId
-          }
+          },
+          {
+            name: 'user:read|write|admin',
+            regex: /^user:(read|write|admin)$/
+          },
+          {
+            name: 'user:line|jog',
+            regex: /^user:(line|jog)$/
+            when: async (params) => params.id === params.userId
+          },
+          {
+            name: 'account:read|write|admin',
+            regex: 'account:(read|write|admin)'
+          },
         ]
       },
       manager: {
@@ -78,9 +93,12 @@ If the element is a string then it is expected to be the name of the permitted o
 
 If the element is an object:
 
-- It must have the `name` and `when` properties
+- It must have the `name` property and at least one of `regex` or `when` properties
   - `name` property must be a string
   - `when` property must be a function that returns a Promise<boolean>
+  - `regex` property must be a regular expression or a string
+
+If regex is a string then it will be turned into a regular expression by adding start and end specifiers. So all regular expression special characters apply
 
 ## Wildcards (v3.1+)
 
