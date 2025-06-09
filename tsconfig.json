@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "commonjs",
+    "lib": ["DOM", "ES2015"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "lib/",
+    "allowSyntheticDefaultImports": true
+  },
+  "files": ["src/easy-rbac.ts", "src/easy-rbac/express.ts"]
+}
