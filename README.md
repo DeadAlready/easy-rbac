@@ -165,7 +165,7 @@ any checks.
 
 ## Express
 
-v4 exports helpers for express middleware rbac checks.
+v4 exports helpers for express middleware rbac checks. By default it will return 401 on a negative check.
 
     import RBAC from 'easy-rbac/express';
 

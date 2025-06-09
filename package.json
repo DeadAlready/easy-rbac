@@ -5,7 +5,10 @@
   "main": "lib/easy-rbac.js",
   "types": "types/easy-rbac.d.ts",
   "exports": {
-    ".": "./lib/easy-rbac.js",
+    ".": {
+      "types": "./types/easy-rbac.d.ts",
+      "default": "./lib/easy-rbac.js"
+    },
     "./express": "./lib/easy-rbac/express.js"
   },
   "scripts": {
