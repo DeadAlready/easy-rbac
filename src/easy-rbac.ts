@@ -3,6 +3,7 @@ import {
   RBACRoleDefinitions,
   RBACWhen,
 } from "./easy-rbac/types";
+import { debug } from "./easy-rbac/utils";
 
 type RBACRoleObject<Role extends string> = {
   can: {
@@ -21,12 +22,6 @@ type RBACRoleMap<Role extends string, InheritRole extends string> = Map<
   RBACRoleObject<InheritRole>
 >;
 
-const debug = isDebugLogEnabled()
-  ? (...args: unknown[]) => {
-      console.log(...args);
-    }
-  : () => {};
-
 class RBAC<Role extends string, InheritRole extends Role> {
   public _inited = false;
   public _init: Promise<void>;
@@ -38,6 +33,11 @@ class RBAC<Role extends string, InheritRole extends Role> {
       | RBACRoleDefinitions<Role, InheritRole>
       | AsyncRoleDefinitions<Role, InheritRole>
   ) {
+    if (!roles) {
+      throw new TypeError(
+        "Roles must be an object, a promise or a function resolving to an object"
+      );
+    }
     if (
       typeof roles !== "function" &&
       (!("then" in roles) || typeof roles.then !== "function")
@@ -301,35 +301,6 @@ class RBAC<Role extends string, InheritRole extends Role> {
 export = RBAC;
 
 // UTILS
-
-function isDebugLogEnabled() {
-  const variable = getVariable();
-  if (!variable) {
-    return false;
-  }
-  if (variable.includes("rbac")) {
-    return true;
-  }
-  return false;
-}
-
-function getVariable(): string | undefined {
-  if (typeof window === "object") {
-    // @ts-ignore
-    return window.DEBUG;
-  } else if (
-    // @ts-ignore
-    typeof process !== "undefined" &&
-    // @ts-ignore
-    process.versions &&
-    // @ts-ignore
-    process.versions.node
-  ) {
-    // @ts-ignore
-    return process.env.DEBUG;
-  }
-  return undefined;
-}
 
 function isGlob(str: string) {
   return str.includes("*");

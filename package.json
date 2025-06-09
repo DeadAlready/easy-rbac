@@ -4,11 +4,15 @@
   "description": "RBAC implementation for Node.js",
   "main": "lib/easy-rbac.js",
   "types": "types/easy-rbac.d.ts",
+  "exports": {
+    ".": "./lib/easy-rbac.js",
+    "./express": "./lib/easy-rbac/express.js"
+  },
   "scripts": {
     "test": "npm run build:test && mocha test/*.js",
     "build": "npm run build:test && npm run build:types",
     "build:test": "tsc -p tsconfig.json",
-    "build:types": "tsc --declaration --emitDeclarationOnly --skipLibCheck --lib es2015,dom --outFile ./types/easy-rbac.d.ts src/easy-rbac.ts",
+    "build:types": "tsc --declaration --emitDeclarationOnly --esModuleInterop --skipLibCheck --lib es2015,dom --outFile ./types/easy-rbac.d.ts src/easy-rbac.ts src/easy-rbac/express.ts",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -25,7 +29,11 @@
   },
   "homepage": "https://github.com/DeadAlready/easy-rbac#readme",
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "axios": "^1.9.0",
+    "express": "^5.1.0",
     "mocha": "^11.5.0",
+    "supertest": "^7.1.1",
     "typescript": "^5.8.3"
   },
   "engines": {

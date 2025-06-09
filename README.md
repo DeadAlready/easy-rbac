@@ -4,14 +4,15 @@ Promise based HRBAC (Hierarchical Role Based Access Control) implementation for 
 
 ## v4
 
-v4 is a backwards compatible rewrite for TypeScript. It adds support for regex operations.
+v4 is a backwards compatible rewrite for TypeScript. It adds support for regex operations and express middleware
 
 - Adds typescript types
 - removes debug dependency
 - adds regex support
 - bubbles up .when execution errors
+- express middleware under /express
 
-## NB! Important changes with v3
+## v3
 
 v3 is a rewrite of the library as such there are important changes:
 
@@ -161,6 +162,41 @@ any checks.
     } else {
       // we are not allowed access
     }
+
+## Express
+
+v4 exports helpers for express middleware rbac checks.
+
+    import RBAC from 'easy-rbac/express';
+
+    const app = express();
+
+    // initialize middleware
+    app.use(RBAC.middleware({
+      roles: {},
+      getRole: (req) => 'guest',
+      getParams: (req) => ({}),
+      forbidden: undefined,
+    }));
+
+    // add checks
+    app.get('/post', RBAC.canAccess('post:get'));
+
+    // extra parameters sent into rbac.can function
+    app.get('/news', RBAC.canAccess('news:get', {myValue: 10}));
+
+    // route params are added to parameters -> {id: ''}
+    app.get('/post/:id', RBAC.canAccess('post:get'));
+
+configuration:
+
+- `roles`: the configuration for RBAC class, check above
+- `getRole`: a function to return role related to request, takes in Request object and should return `string | string[]` or `Promise<string | string[]>`
+- `getParams`: optional function to return params related to rbac check. Takes in Request object and should return `object` or `Promise<object>`
+- `forbidden`: optional param to determine failed check handling.
+  - `undefined` (default): will respond with statuscode 401
+  - `'error'`: will invoke `next()` with `RBACError`
+  - `(req, res, next) => void`: will invoke provided function with Request, Response, NextFunction parameters for custom handling
 
 ## License
 

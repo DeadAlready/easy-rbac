@@ -9,5 +9,5 @@
     "outDir": "lib/",
     "allowSyntheticDefaultImports": true
   },
-  "files": ["src/easy-rbac.ts"]
+  "files": ["src/easy-rbac.ts", "src/easy-rbac/express.ts"]
 }
